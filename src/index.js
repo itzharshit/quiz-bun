@@ -526,6 +526,6 @@ const app = new Elysia()
     };
   })
 
-  .listen(3000, () => console.log('Server running on http://localhost:3000'));
+  .listen(9216, () => console.log('Server running on http://localhost:9216'));
 
 export default app;
