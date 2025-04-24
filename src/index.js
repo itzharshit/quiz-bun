@@ -26,12 +26,15 @@ db.data ||= schema;
 // Helper functions
 const findEntity = (collection, id) => db.data[collection].find(item => item.id === id);
 const filterEntities = (collection, field, value) => db.data[collection].filter(item => item[field] === value);
-const existsWithName = (collection, name, parentField = null, parentId = null) => {
-  const items = parentField 
+const existsWithName = (collection, name, parentField = null, parentId = null, excludeId = null) => {
+const items = parentField 
     ? db.data[collection].filter(item => item[parentField] === parentId)
     : db.data[collection];
-  return items.some(item => item.name.toLowerCase() === name.toLowerCase());
+  return items.some(item => 
+    item.name.toLowerCase() === name.toLowerCase() && item.id !== excludeId
+  );
 };
+                  
 
 const app = new Elysia()
   // Error handling middleware
