@@ -1,10 +1,236 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Bun on Vercellll</title>
-</head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MCQ App - User Panel</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="style.css"> </head>
 <body>
-    <h1>Bun App Deployed lllon Vercel 🚀</h1>
-    <p>Check the API: <a href="/api">/api</a></p>
+  <div class="container mt-5">
+    <h1>Welcome to the MCQ Quiz</h1>
+    <div id="selection-panel">
+      <h2>Select Quiz</h2>
+      <div class="mb-3">
+        <label for="category" class="form-label">Category:</label>
+        <select class="form-select" id="category"></select>
+      </div>
+      <div class="mb-3">
+        <label for="subcategory" class="form-label">Subcategory:</label>
+        <select class="form-select" id="subcategory" disabled></select>
+      </div>
+      <div class="mb-3">
+        <label for="subject" class="form-label">Subject:</label>
+        <select class="form-select" id="subject" disabled></select>
+      </div>
+      <div class="mb-3">
+        <label for="chapter" class="form-label">Chapter:</label>
+        <select class="form-select" id="chapter" disabled></select>
+      </div>
+      <button id="start-quiz" class="btn btn-primary" disabled>Start Quiz</button>
+    </div>
+
+    <div id="quiz-panel" class="d-none">
+      <h2>Quiz</h2>
+      <div id="question-container">
+        </div>
+      <button id="submit-quiz-btn" class="btn btn-success mt-3">Submit Quiz</button>
+    </div>
+
+    <div id="results-panel" class="d-none mt-4">
+      <h2>Quiz Results</h2>
+      <div id="results">
+        </div>
+      <p>Total Marks: <span id="total-marks"></span></p>
+      <button id="back-to-selection" class="btn btn-secondary mt-2">Back to Selection</button>
+    </div>
+  </div>
+
+  <script>
+    // Basic JavaScript for fetching data and handling UI interactions
+    async function fetchCategories() {
+      const response = await fetch('/categories');
+      const categories = await response.json();
+      const categorySelect = document.getElementById('category');
+      categories.forEach(cat => {
+        const option = document.createElement('option');
+        option.value = cat.id;
+        option.textContent = cat.name;
+        categorySelect.appendChild(option);
+      });
+      categorySelect.addEventListener('change', fetchSubcategories);
+    }
+
+    async function fetchSubcategories() {
+      const categoryId = document.getElementById('category').value;
+      const response = await fetch(`/subcategories/${categoryId}`);
+      const subcategories = await response.json();
+      const subcategorySelect = document.getElementById('subcategory');
+      subcategorySelect.innerHTML = '<option value="" disabled selected>Select Subcategory</option>';
+      subcategories.forEach(sub => {
+        const option = document.createElement('option');
+        option.value = sub.id;
+        option.textContent = sub.name;
+        subcategorySelect.appendChild(option);
+      });
+      subcategorySelect.disabled = false;
+      subcategorySelect.addEventListener('change', fetchSubjects);
+      document.getElementById('subject').disabled = true;
+      document.getElementById('chapter').disabled = true;
+      document.getElementById('start-quiz').disabled = true;
+    }
+
+    async function fetchSubjects() {
+      const subcategoryId = document.getElementById('subcategory').value;
+      const response = await fetch(`/subjects/${subcategoryId}`);
+      const subjects = await response.json();
+      const subjectSelect = document.getElementById('subject');
+      subjectSelect.innerHTML = '<option value="" disabled selected>Select Subject</option>';
+      subjects.forEach(sub => {
+        const option = document.createElement('option');
+        option.value = sub.id;
+        option.textContent = sub.name;
+        subjectSelect.appendChild(option);
+      });
+      subjectSelect.disabled = false;
+      subjectSelect.addEventListener('change', fetchChapters);
+      document.getElementById('chapter').disabled = true;
+      document.getElementById('start-quiz').disabled = true;
+    }
+
+    async function fetchChapters() {
+      const subjectId = document.getElementById('subject').value;
+      const response = await fetch(`/chapters/${subjectId}`);
+      const chapters = await response.json();
+      const chapterSelect = document.getElementById('chapter');
+      chapterSelect.innerHTML = '<option value="" disabled selected>Select Chapter</option>';
+      chapters.forEach(chap => {
+        const option = document.createElement('option');
+        option.value = chap.id;
+        option.textContent = chap.name;
+        chapterSelect.appendChild(option);
+      });
+      chapterSelect.disabled = false;
+      chapterSelect.addEventListener('change', () => {
+        document.getElementById('start-quiz').disabled = false;
+      });
+    }
+
+    let currentChapterId = null;
+    let questions = [];
+    let currentQuestionIndex = 0;
+    const questionContainer = document.getElementById('question-container');
+    const quizPanel = document.getElementById('quiz-panel');
+    const selectionPanel = document.getElementById('selection-panel');
+    const resultsPanel = document.getElementById('results-panel');
+    const resultsDiv = document.getElementById('results');
+    const totalMarksSpan = document.getElementById('total-marks');
+    let studentAnswers = {};
+
+    document.getElementById('start-quiz').addEventListener('click', async () => {
+      currentChapterId = document.getElementById('chapter').value;
+      const response = await fetch(`/mcqs/${currentChapterId}`);
+      questions = await response.json();
+      currentQuestionIndex = 0;
+      studentAnswers = {};
+      selectionPanel.classList.add('d-none');
+      quizPanel.classList.remove('d-none');
+      displayQuestion();
+    });
+
+    function displayQuestion() {
+      if (currentQuestionIndex < questions.length) {
+        const question = questions[currentQuestionIndex];
+        questionContainer.innerHTML = `
+          <h3>Question <span class="math-inline">\{currentQuestionIndex \+ 1\}</h3\>
+<p\></span>{question.question}</p>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="answer" id="option1" value="0">
+            <label class="form-check-label" for="option1"><span class="math-inline">\{question\.options\[0\]\}</label\>
+</div\>
+<div class\="form\-check"\>
+<input class\="form\-check\-input" type\="radio" name\="answer" id\="option2" value\="1"\>
+<label class\="form\-check\-label" for\="option2"\></span>{question.options[1]}</label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="answer" id="option3" value="2">
+            <label class="form-check-label" for="option3"><span class="math-inline">\{question\.options\[2\]\}</label\>
+</div\>
+<div class\="form\-check"\>
+<input class\="form\-check\-input" type\="radio" name\="answer" id\="option4" value\="3"\>
+<label class\="form\-check\-label" for\="option4"\></span>{question.options[3]}</label>
+          </div><button id="next-question" class="btn btn-primary mt-2">Next</button>
+        `;
+
+        const nextButton = document.getElementById('next-question');
+        const answerRadios = document.querySelectorAll('input[name="answer"]');
+
+        // Pre-select the previous answer if it exists
+        if (studentAnswers[question.id] !== undefined) {
+          answerRadios[studentAnswers[question.id]].checked = true;
+        }
+
+        nextButton.addEventListener('click', () => {
+          const selectedOption = document.querySelector('input[name="answer"]:checked');
+          if (selectedOption) {
+            studentAnswers[question.id] = parseInt(selectedOption.value);
+            currentQuestionIndex++;
+            displayQuestion();
+          } else {
+            alert('Please select an answer.');
+          }
+        });
+      } else {
+        // Quiz finished, submit answers
+        submitQuiz();
+      }
+    }
+
+    async function submitQuiz() {
+      const response = await fetch('/submit-quiz', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          chapterId: currentChapterId,
+          studentAnswers: studentAnswers,
+        }),
+      });
+      const resultsData = await response.json();
+      quizPanel.classList.add('d-none');
+      resultsPanel.classList.remove('d-none');
+      displayResults(resultsData);
+    }
+
+    function displayResults(resultsData) {
+      resultsDiv.innerHTML = '';
+      for (const questionId in resultsData.results) {
+        const result = resultsData.results[questionId];
+        const question = questions.find(q => q.id === questionId);
+        const userAnswerIndex = studentAnswers[questionId];
+        const userAnswer = question.options[userAnswerIndex];
+        const correctAnswer = question.options[result.correctAnswer];
+
+        const resultElement = document.createElement('div');
+        resultElement.classList.add('mb-2');
+        resultElement.innerHTML = `
+          <p><strong>Question:</strong> ${question.question}</p>
+          <p>Your Answer: ${userAnswer || 'Not answered'} ${result.correct ? '<span class="text-success">(Correct)</span>' : `<span class="text-danger">(Incorrect)</span>`}</p>
+          <p>Correct Answer: <span class="text-success">${correctAnswer}</span></p>
+        `;
+        resultsDiv.appendChild(resultElement);
+      }
+      totalMarksSpan.textContent = resultsData.totalMarks;
+    }
+
+    document.getElementById('back-to-selection').addEventListener('click', () => {
+      selectionPanel.classList.remove('d-none');
+      quizPanel.classList.add('d-none');
+      resultsPanel.classList.add('d-none');
+    });
+
+    fetchCategories();
+  </script>
 </body>
-      </html>
+</html>
