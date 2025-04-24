@@ -2,7 +2,7 @@
   "name": "bun-vercel-app",
   "version": "1.0.0",
   "scripts": {
-    "start": "bun run src/index.ts"
+    "start": "bun run src/index.js"
   },
   "dependencies": {
     "@vercel/node": "^4.0.0"
